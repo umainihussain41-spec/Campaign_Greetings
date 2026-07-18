@@ -1,4 +1,5 @@
 import { config, flowUrl } from './config.js';
+import { toE164 } from './phone.js';
 
 const base = () =>
   `https://${config.exotel.subdomain}/v2/accounts/${config.exotel.sid}`;
@@ -39,11 +40,21 @@ async function call(method, url, body) {
 // Docs: POST /contacts, POST /lists, POST /lists/{sid}/contacts
 // https://developer.exotel.com/api/create-lists
 
+// Bulk-register contacts and return their Exotel SIDs. Numbers are
+// normalized to E.164 first (Exotel rejects other formats). The API is
+// multi-status (207): each entry carries data.sid on success (200) AND on
+// duplicate (409, "already exists"), so we harvest the sid in both cases.
 export async function createContacts(numbers) {
-  const body = {
-    contacts: numbers.map((n) => ({ number: n })),
-  };
-  return call('POST', `${base()}/contacts`, body);
+  const e164 = numbers.map((n) => toE164(n, config.exotel.countryCode)).filter(Boolean);
+  const json = await call('POST', `${base()}/contacts`, {
+    contacts: e164.map((number) => ({ number })),
+  });
+  const sids = [];
+  for (const r of json?.response || []) {
+    const sid = r?.data?.sid;
+    if (sid) sids.push(sid);
+  }
+  return { sids, raw: json };
 }
 
 export async function createList(name) {
@@ -57,8 +68,10 @@ export async function createList(name) {
   return { sid, raw: json };
 }
 
-export async function addContactsToList(listSid, numbers) {
-  const body = { contacts: numbers.map((n) => ({ number: n })) };
+// Attach contacts to a list by SID reference. Exotel expects
+// `contact_references` as an array of { contact_sid } objects.
+export async function addContactsToList(listSid, contactSids) {
+  const body = { contact_references: contactSids.map((contact_sid) => ({ contact_sid })) };
   return call('POST', `${base()}/lists/${listSid}/contacts`, body);
 }
 
@@ -110,13 +123,14 @@ export async function createCampaign(p) {
  * Returns { campaignId, listSid, raw }.
  */
 export async function provisionAndCreateCampaign({ name, callerId, numbers, sendAt, endAt, retries, callbacks }) {
-  // 1. Register the contacts in the Campaigns addressbook.
-  await createContacts(numbers);
+  // 1. Register the contacts (E.164) in the Campaigns addressbook; capture SIDs.
+  const { sids } = await createContacts(numbers);
+  if (!sids.length) throw new Error('Exotel returned no contact SIDs — check number formatting (E.164) in the logs.');
   // 2. Create a list dedicated to this campaign (names must be unique).
   const { sid: listSid } = await createList(`dg-${name}-${numbers.length}-${sendAt || 'now'}`.slice(0, 60));
   if (!listSid) throw new Error('Exotel did not return a list SID when creating the list.');
-  // 3. Attach contacts to the list.
-  await addContactsToList(listSid, numbers);
+  // 3. Attach contacts to the list by SID reference.
+  await addContactsToList(listSid, sids);
   // 4. Create the campaign against that list.
   const { id: campaignId, raw } = await createCampaign({
     name, callerId, listSid, sendAt, endAt, retries, callbacks,

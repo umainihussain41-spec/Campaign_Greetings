@@ -22,6 +22,9 @@ export const config = {
     subdomain: process.env.EXOTEL_SUBDOMAIN || 'api.exotel.com',
     callerId: process.env.EXOTEL_CALLER_ID || '',
     appId: process.env.EXOTEL_APP_ID || '',
+    // Country code prepended when normalizing recipient numbers to E.164
+    // (Exotel's Contacts API rejects anything else). Default: India (91).
+    countryCode: (process.env.EXOTEL_COUNTRY_CODE || '91').replace(/\D/g, ''),
   },
 
   webhookToken: process.env.WEBHOOK_TOKEN || '',

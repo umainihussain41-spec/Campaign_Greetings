@@ -12,6 +12,15 @@ export function numberKey(raw) {
   return d.slice(-10);
 }
 
+// Format to E.164 (e.g. +919876543210) — the only shape Exotel's Contacts
+// API accepts. Takes the last 10 digits (the subscriber number, consistent
+// with numberKey) and prepends the country code. Returns null if too short.
+export function toE164(raw, countryCode = '91') {
+  const d = digitsOnly(raw);
+  if (d.length < 10) return null;
+  return `+${countryCode}${d.slice(-10)}`;
+}
+
 // Parse a textarea / CSV blob of numbers into a clean, de-duped list.
 export function parseNumbers(blob) {
   const seen = new Set();
