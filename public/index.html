@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dynamic Greetings — Exotel Campaigns</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>🎙️ Dynamic Greetings</h1>
+    <p class="sub">Upload MP3s, pick one, schedule an Exotel voice campaign — per-call results stream back below.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>1 · MP3 Library</h2>
+      <form id="upload-form" class="row">
+        <input type="text" id="up-name" placeholder="Greeting name (e.g. Diwali offer)" />
+        <input type="file" id="up-file" accept="audio/mpeg,audio/wav,.mp3,.wav" required />
+        <button type="submit">Upload</button>
+      </form>
+      <p class="hint">Auto-transcoded to 8 kHz mono MP3 (Exotel spec). Each upload gets a unique URL so cached audio never goes stale.</p>
+      <div id="library" class="list"></div>
+    </section>
+
+    <section class="card">
+      <h2>2 · New Campaign</h2>
+      <form id="campaign-form">
+        <div class="row">
+          <input type="text" id="c-name" placeholder="Campaign name" required />
+          <input type="text" id="c-caller" placeholder="Caller ID / ExoPhone (blank = default)" />
+        </div>
+        <label class="field">Greeting to play
+          <select id="c-greeting" required></select>
+        </label>
+        <label class="field">Phone numbers (comma / space / newline separated)
+          <textarea id="c-numbers" rows="4" placeholder="9876543210, 9123456780 …" required></textarea>
+        </label>
+        <div class="row">
+          <label class="field">Send at (IST)
+            <input type="datetime-local" id="c-sendat" />
+          </label>
+          <label class="field">End at (IST, optional)
+            <input type="datetime-local" id="c-endat" />
+          </label>
+          <label class="field">Retries
+            <input type="number" id="c-retries" min="0" max="3" value="0" />
+          </label>
+        </div>
+        <p class="hint">Leave “Send at” empty to start immediately. Times are treated as IST (+05:30).</p>
+        <button type="submit">Create campaign</button>
+        <span id="c-status" class="status"></span>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>3 · Campaigns</h2>
+      <div id="campaigns" class="list"></div>
+    </section>
+
+    <section class="card">
+      <h2>4 · Individual Calls
+        <button id="refresh-calls" class="ghost" type="button">Refresh</button>
+      </h2>
+      <p class="hint">Live from Exotel's per-call <code>call_status_callback</code>. Auto-refreshes every 15s.</p>
+      <div class="table-wrap">
+        <table id="calls">
+          <thead><tr>
+            <th>Received</th><th>To</th><th>Status</th><th>Dur (s)</th><th>Campaign</th><th>Recording</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
