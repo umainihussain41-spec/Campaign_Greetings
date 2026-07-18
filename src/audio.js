@@ -40,6 +40,11 @@ export async function transcodeAndStore(inputBuffer, originalName) {
   try {
     await new Promise((resolve, reject) => {
       ffmpeg(tmpIn)
+        .noVideo()                // drop embedded album art / attached pics -
+                                  // a leftover image stream makes browsers play
+                                  // only a click/beep instead of the audio
+        .outputOptions('-map', '0:a:0')   // take only the first audio stream
+        .outputOptions('-map_metadata', '-1') // strip ID3 tags/cover metadata
         .audioFrequency(8000)     // 8 kHz - Exotel requirement
         .audioChannels(1)         // mono
         .audioCodec('libmp3lame')
