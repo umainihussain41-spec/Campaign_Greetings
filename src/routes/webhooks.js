@@ -28,8 +28,12 @@ function resolveAudioUrl(req) {
     if (url) return url;
   }
 
-  // Fallback: the globally selected greeting.
-  return store.getActiveGreeting()?.url || null;
+  // Fallback: the globally selected greeting, then — as a last resort so a
+  // call is never silent — the most recently uploaded greeting.
+  const active = store.getActiveGreeting();
+  if (active) return active.url;
+  const recent = store.listGreetings()[0];
+  return recent?.url || null;
 }
 
 function audioHandler(req, res, next) {

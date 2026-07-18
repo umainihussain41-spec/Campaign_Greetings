@@ -32,6 +32,12 @@ greetingsRouter.post('/', upload.single('file'), async (req, res, next) => {
       size_bytes: size,
       duration_sec: durationSec,
     });
+    // If nothing is selected yet, make this the active default so calls are
+    // never silent just because the user forgot to click "Set default".
+    if (!store.getActiveGreeting()) {
+      await store.setActiveGreeting(row.id);
+      row.is_active = true;
+    }
     res.status(201).json(row);
   } catch (e) { next(e); }
 });
