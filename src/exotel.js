@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { config, flowUrl } from './config.js';
 import { toE164 } from './phone.js';
 
@@ -126,9 +127,15 @@ export async function provisionAndCreateCampaign({ name, callerId, numbers, send
   // 1. Register the contacts (E.164) in the Campaigns addressbook; capture SIDs.
   const { sids } = await createContacts(numbers);
   if (!sids.length) throw new Error('Exotel returned no contact SIDs — check number formatting (E.164) in the logs.');
-  // 2. Create a list dedicated to this campaign (names must be unique).
-  const { sid: listSid } = await createList(`dg-${name}-${numbers.length}-${sendAt || 'now'}`.slice(0, 60));
-  if (!listSid) throw new Error('Exotel did not return a list SID when creating the list.');
+  // 2. Create a list dedicated to this campaign. Exotel rejects duplicate
+  //    list names (409, no sid returned), so make the name unique per run.
+  const suffix = randomUUID().slice(0, 8);
+  const { sid: listSid, raw: listRaw } =
+    await createList(`dg-${name}-${suffix}`.slice(0, 60));
+  if (!listSid) {
+    const why = listRaw?.response?.[0]?.error_data?.description || 'no sid in response';
+    throw new Error(`Exotel did not return a list SID when creating the list (${why}).`);
+  }
   // 3. Attach contacts to the list by SID reference.
   await addContactsToList(listSid, sids);
   // 4. Create the campaign against that list.
