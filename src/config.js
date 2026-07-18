@@ -3,7 +3,7 @@ import path from 'node:path';
 
 function required(name) {
   const v = process.env[name];
-  if (!v) console.warn(`[config] Missing env ${name} — related features will fail until it is set.`);
+  if (!v) console.warn(`[config] Missing env ${name} - related features will fail until it is set.`);
   return v || '';
 }
 

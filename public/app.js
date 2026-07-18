@@ -14,7 +14,7 @@ const api = {
 async function err(r) { try { const j = await r.json(); return new Error(j.detail || j.error || r.statusText); } catch { return new Error(r.statusText); } }
 
 const toIST = (v) => (v ? `${v}:00+05:30` : null);
-const fmt = (ts) => (ts ? new Date(ts).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
+const fmt = (ts) => (ts ? new Date(ts).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-');
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
 const key10 = (n) => String(n || '').replace(/\D/g, '').slice(-10);
 
@@ -115,7 +115,7 @@ function statusInfo(camp) {
   if (s.completed > 0) return { label: 'Completed', cls: 'completed' };
   return { label: title(camp.status), cls: normCls(camp.status) };
 }
-const title = (s) => String(s || '—').replace(/[-_]/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+const title = (s) => String(s || '-').replace(/[-_]/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
 const normCls = (s) => (String(s).toLowerCase() === 'in-progress' ? 'in-progress' : String(s).toLowerCase());
 
 // ── SVG donut ─────────────────────────────────────────────────
@@ -168,9 +168,9 @@ function renderTiles() {
   ];
   $('#tiles').innerHTML = tiles.map((t) => `<div class="tile ${t.cls}"><div class="k">${t.k}</div><div class="v">${t.v}</div><div class="sfx">${t.sfx}</div></div>`).join('');
 }
-const pct = (n, d) => (d ? `${Math.round((n / d) * 100)}% of total` : '—');
+const pct = (n, d) => (d ? `${Math.round((n / d) * 100)}% of total` : '-');
 
-function renderDonut() { $('#donut').innerHTML = donutBlock(globalCounts().counts, calls.length, 'calls', false); }
+function renderDonut() { $('#donut').innerHTML = donutBlock(globalCounts().counts, calls.length, 'calls', true); }
 
 function renderBars() {
   const box = $('#bars');
@@ -183,7 +183,7 @@ function renderBars() {
 }
 
 function campaignName(exotelId) {
-  if (!exotelId) return '—';
+  if (!exotelId) return '-';
   const c = campaigns.find((x) => String(x.exotel_campaign_id) === String(exotelId));
   return c ? c.name : '#' + exotelId;
 }
@@ -191,11 +191,11 @@ function callRow(c, opts = {}) {
   const g = granular(c.status);
   return `<tr>
     <td>${fmt(c.received_at)}</td>
-    <td>${esc(c.to_number || '—')}</td>
-    <td><span class="pill ${g === 'noanswer' || g === 'busy' ? 'failed' : g}">${esc(c.status || '—')}</span></td>
-    <td class="num">${c.duration_sec ?? '—'}${Number.isFinite(c.duration_sec) ? 's' : ''}</td>
+    <td>${esc(c.to_number || '-')}</td>
+    <td><span class="pill ${g === 'noanswer' || g === 'busy' ? 'failed' : g}">${esc(c.status || '-')}</span></td>
+    <td class="num">${c.duration_sec ?? '-'}${Number.isFinite(c.duration_sec) ? 's' : ''}</td>
     <td>${opts.started ? fmt(c.start_time) : esc(campaignName(c.exotel_campaign_id))}</td>
-    <td>${c.recording_url ? `<a href="${esc(c.recording_url)}" target="_blank" rel="noopener">${icon('play')} play</a>` : '—'}</td>
+    <td>${c.recording_url ? `<a href="${esc(c.recording_url)}" target="_blank" rel="noopener">${icon('play')} play</a>` : '-'}</td>
   </tr>`;
 }
 function renderRecent() {
@@ -205,7 +205,7 @@ function renderRecent() {
 }
 
 // ── Campaigns list ────────────────────────────────────────────
-function greetingName(id) { const g = greetings.find((x) => x.id === id); return g ? g.name : '—'; }
+function greetingName(id) { const g = greetings.find((x) => x.id === id); return g ? g.name : '-'; }
 function renderCampaignsList() {
   $('#campaigns-count').textContent = campaigns.length ? `${campaigns.length} total` : '';
   const tb = $('#campaigns-table tbody');
@@ -234,19 +234,19 @@ function renderDetail() {
   const pill = $('#camp-status'); pill.className = 'pill ' + st.cls; pill.textContent = st.label;
 
   const kv = [
-    ['Exotel campaign ID', c.exotel_campaign_id ? `<span class="mono">${esc(c.exotel_campaign_id)}</span>` : '—'],
-    ['List ID', c.exotel_list_id ? `<span class="mono">${esc(c.exotel_list_id)}</span>` : '—'],
+    ['Exotel campaign ID', c.exotel_campaign_id ? `<span class="mono">${esc(c.exotel_campaign_id)}</span>` : '-'],
+    ['List ID', c.exotel_list_id ? `<span class="mono">${esc(c.exotel_list_id)}</span>` : '-'],
     ['Greeting', esc(greetingName(c.greeting_id))],
-    ['Caller ID', esc(c.caller_id || '—')],
+    ['Caller ID', esc(c.caller_id || '-')],
     ['Start time', c.send_at ? fmt(c.send_at) : fmt(c.created_at) + ' (immediate)'],
-    ['End time', c.end_at ? fmt(c.end_at) : '—'],
+    ['End time', c.end_at ? fmt(c.end_at) : '-'],
     ['Total numbers', `<span class="num">${c.numbers_count || 0}</span>`],
     ['Created', fmt(c.created_at)],
   ];
   if (c.last_error) kv.push(['Last error', `<span style="color:var(--fail)">${esc(c.last_error)}</span>`, true]);
   $('#camp-kv').innerHTML = kv.map(([k, v, full]) => `<div class="row${full ? ' full' : ''}"><span class="k">${k}</span><span class="val">${v}</span></div>`).join('');
 
-  // Stats donut — fold "awaiting result" numbers into In Progress so the
+  // Stats donut - fold "awaiting result" numbers into In Progress so the
   // total reflects every targeted number, like the Exotel dashboard.
   const display = { ...s.counts, pending: s.counts.pending + s.awaiting };
   $('#camp-donut').innerHTML = donutBlock(display, s.target, 'Total Numbers', true);
@@ -266,12 +266,12 @@ function renderDetail() {
 function renderLibrary() {
   const lib = $('#library'); const sel = $('#c-greeting'); sel.innerHTML = '';
   $('#side-greeting').textContent = (greetings.find((g) => g.is_active)?.name) || 'none selected';
-  if (!greetings.length) { lib.innerHTML = '<div class="empty">No greetings yet — upload one above.</div>'; return; }
+  if (!greetings.length) { lib.innerHTML = '<div class="empty">No greetings yet - upload one above.</div>'; return; }
   lib.innerHTML = greetings.map((g) => `
     <div class="item ${g.is_active ? 'active' : ''}">
       <div class="meta"><b>${esc(g.name)} ${g.is_active ? '<span class="pill completed">active default</span>' : ''}</b>
       <small>${g.duration_sec ? Math.round(g.duration_sec) + 's · ' : ''}${Math.round((g.size_bytes || 0) / 1024)} KB</small></div>
-      <audio controls preload="none" src="${esc(g.url)}"></audio>
+      <audio controls preload="none" src="${g.file_name ? '/audio/' + esc(g.file_name) : esc(g.url)}"></audio>
       <button class="btn ghost sm" data-select="${g.id}">${g.is_active ? '✓ Default' : 'Set default'}</button>
       <button class="btn danger sm" data-del="${g.id}">Delete</button>`).join('');
   for (const g of greetings) { const o = document.createElement('option'); o.value = g.id; o.textContent = g.name; sel.appendChild(o); }

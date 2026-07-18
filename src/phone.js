@@ -6,13 +6,13 @@ export function digitsOnly(raw) {
   return String(raw || '').replace(/\D/g, '');
 }
 
-// Last 10 digits — robust across "+91 98…", "098…", "98…" variants.
+// Last 10 digits - robust across "+91 98…", "098…", "98…" variants.
 export function numberKey(raw) {
   const d = digitsOnly(raw);
   return d.slice(-10);
 }
 
-// Format to E.164 (e.g. +919876543210) — the only shape Exotel's Contacts
+// Format to E.164 (e.g. +919876543210) - the only shape Exotel's Contacts
 // API accepts. Takes the last 10 digits (the subscriber number, consistent
 // with numberKey) and prepends the country code. Returns null if too short.
 export function toE164(raw, countryCode = '91') {

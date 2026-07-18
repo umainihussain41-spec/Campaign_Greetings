@@ -1,8 +1,8 @@
-# Dynamic Greetings — Exotel voice campaigns with a swappable MP3 library
+# Dynamic Greetings - Exotel voice campaigns with a swappable MP3 library
 
 Upload MP3s, click one to make it the greeting, schedule an Exotel voice
 campaign, and receive **per-call** results on a webhook. The MP3 is chosen
-dynamically at call time — Exotel's flow asks this app which file to play.
+dynamically at call time - Exotel's flow asks this app which file to play.
 
 ## How it works (the important part)
 
@@ -26,7 +26,7 @@ Campaign API ──points at──▶ Flow (has a Greeting/Connect applet with a
 
 ## Prerequisites (one-time Exotel setup)
 
-1. **Enable Campaigns API** on your account (ask Exotel support — it's gated).
+1. **Enable Campaigns API** on your account (ask Exotel support - it's gated).
 2. **Create one Flow** in App Bazaar with a **Greeting applet** (or Connect
    applet) set to *dynamic URL* / "read text like a robot":
    ```
@@ -43,13 +43,13 @@ cp .env.example .env      # fill in the values
 npm start
 ```
 
-Open http://localhost:3000. No database to provision — greetings, campaigns,
+Open http://localhost:3000. No database to provision - greetings, campaigns,
 and call rows are stored in a single JSON file at `$DATA_DIR/db.json`, next to
 the MP3s in `$DATA_DIR/audio/`.
 
-> Requires **Node 18.17+**. `ffmpeg` ships via `ffmpeg-static` — no system
+> Requires **Node 18.17+**. `ffmpeg` ships via `ffmpeg-static` - no system
 > install needed. (Duration probing needs `ffprobe`; if absent it's simply
-> left blank — harmless.)
+> left blank - harmless.)
 
 ## Environment
 
@@ -57,7 +57,7 @@ See [.env.example](.env.example). Key ones:
 
 | Var | Meaning |
 |-----|---------|
-| `PUBLIC_BASE_URL` | This app's public URL — what Exotel fetches audio from / posts calls to |
+| `PUBLIC_BASE_URL` | This app's public URL - what Exotel fetches audio from / posts calls to |
 | `DATA_DIR` | Where MP3s + `db.json` are written (Railway: mount a Volume here) |
 | `EXOTEL_SID` / `EXOTEL_API_KEY` / `EXOTEL_API_TOKEN` / `EXOTEL_SUBDOMAIN` | API auth |
 | `EXOTEL_APP_ID` | The flow that plays our dynamic audio |

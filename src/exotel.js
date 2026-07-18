@@ -126,7 +126,7 @@ export async function createCampaign(p) {
 export async function provisionAndCreateCampaign({ name, callerId, numbers, sendAt, endAt, retries, callbacks }) {
   // 1. Register the contacts (E.164) in the Campaigns addressbook; capture SIDs.
   const { sids } = await createContacts(numbers);
-  if (!sids.length) throw new Error('Exotel returned no contact SIDs — check number formatting (E.164) in the logs.');
+  if (!sids.length) throw new Error('Exotel returned no contact SIDs - check number formatting (E.164) in the logs.');
   // 2. Create a list dedicated to this campaign. Exotel rejects duplicate
   //    list names (409, no sid returned), so make the name unique per run.
   const suffix = randomUUID().slice(0, 8);

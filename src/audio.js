@@ -40,7 +40,7 @@ export async function transcodeAndStore(inputBuffer, originalName) {
   try {
     await new Promise((resolve, reject) => {
       ffmpeg(tmpIn)
-        .audioFrequency(8000)     // 8 kHz — Exotel requirement
+        .audioFrequency(8000)     // 8 kHz - Exotel requirement
         .audioChannels(1)         // mono
         .audioCodec('libmp3lame')
         .audioBitrate('32k')      // small; keeps well under the 2 MB cap

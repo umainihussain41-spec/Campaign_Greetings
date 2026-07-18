@@ -15,7 +15,7 @@ function tokenOk(req) {
 // ── DYNAMIC AUDIO ─────────────────────────────────────────────────────
 // Exotel's Greeting/Connect applet (dynamic URL) hits this with a GET
 // (and a HEAD to sniff headers). We answer text/plain with a single
-// audio URL — the greeting currently mapped to the dialed number, else
+// audio URL - the greeting currently mapped to the dialed number, else
 // the global active greeting.
 //
 // Exotel sends: CallSid, From, To, DialWhomNumber.
@@ -50,7 +50,7 @@ webhooksRouter.head('/audio', audioHandler);
 // ── PER-CALL STATUS ───────────────────────────────────────────────────
 // call_status_callback fires once per call with that call's outcome.
 // Exotel usually posts application/x-www-form-urlencoded; we also accept
-// JSON. Fields vary by product version — we upsert by CallSid and keep
+// JSON. Fields vary by product version - we upsert by CallSid and keep
 // the full raw payload.
 function pick(body, ...keys) {
   for (const k of keys) {
@@ -99,7 +99,7 @@ async function callStatusHandler(req, res, next) {
 }
 
 webhooksRouter.post('/call-status', callStatusHandler);
-// Exotel may issue GET for some callback configs — accept both.
+// Exotel may issue GET for some callback configs - accept both.
 webhooksRouter.get('/call-status', callStatusHandler);
 
 // ── Other campaign callbacks (logged for completeness) ────────────────

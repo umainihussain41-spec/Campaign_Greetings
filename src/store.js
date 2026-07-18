@@ -1,4 +1,4 @@
-// Tiny file-backed store — no external database. Everything lives in one
+// Tiny file-backed store - no external database. Everything lives in one
 // JSON file next to the MP3s (DATA_DIR). Fine for this workload: a handful
 // of greetings/campaigns and a stream of call rows. Writes are serialized
 // and atomic (temp file + rename).
@@ -132,7 +132,7 @@ export async function upsertCall(row) {
 
 // Bucket a raw Exotel call status into one of: completed | failed | pending |
 // other. "failed" = worth retrying (busy, no-answer, failed, canceled…).
-// Order matters: check failure first — "no-answer" contains "answer", so a
+// Order matters: check failure first - "no-answer" contains "answer", so a
 // naive success check would misfile it as completed.
 const RETRY_RE = /(fail|busy|no[-_ ]?answer|cancel|declin|reject|missed|unreach)/i;
 const SUCCESS_RE = /(complete|answer|success)/i;
