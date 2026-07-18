@@ -7,74 +7,146 @@
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <header>
-    <h1>🎙️ Dynamic Greetings</h1>
-    <p class="sub">Upload MP3s, pick one, schedule an Exotel voice campaign — per-call results stream back below.</p>
-  </header>
-
-  <main>
-    <section class="card">
-      <h2>1 · MP3 Library</h2>
-      <form id="upload-form" class="row">
-        <input type="text" id="up-name" placeholder="Greeting name (e.g. Diwali offer)" />
-        <input type="file" id="up-file" accept="audio/mpeg,audio/wav,.mp3,.wav" required />
-        <button type="submit">Upload</button>
-      </form>
-      <p class="hint">Auto-transcoded to 8 kHz mono MP3 (Exotel spec). Each upload gets a unique URL so cached audio never goes stale.</p>
-      <div id="library" class="list"></div>
-    </section>
-
-    <section class="card">
-      <h2>2 · New Campaign</h2>
-      <form id="campaign-form">
-        <div class="row">
-          <input type="text" id="c-name" placeholder="Campaign name" required />
-          <input type="text" id="c-caller" placeholder="Caller ID / ExoPhone (blank = default)" />
-        </div>
-        <label class="field">Greeting to play
-          <select id="c-greeting" required></select>
-        </label>
-        <label class="field">Phone numbers (comma / space / newline separated)
-          <textarea id="c-numbers" rows="4" placeholder="9876543210, 9123456780 …" required></textarea>
-        </label>
-        <div class="row">
-          <label class="field">Send at (IST)
-            <input type="datetime-local" id="c-sendat" />
-          </label>
-          <label class="field">End at (IST, optional)
-            <input type="datetime-local" id="c-endat" />
-          </label>
-          <label class="field">Retries
-            <input type="number" id="c-retries" min="0" max="3" value="0" />
-          </label>
-        </div>
-        <p class="hint">Leave “Send at” empty to start immediately. Times are treated as IST (+05:30).</p>
-        <button type="submit">Create campaign</button>
-        <span id="c-status" class="status"></span>
-      </form>
-    </section>
-
-    <section class="card">
-      <h2>3 · Campaigns</h2>
-      <div id="campaigns" class="list"></div>
-    </section>
-
-    <section class="card">
-      <h2>4 · Individual Calls
-        <button id="refresh-calls" class="ghost" type="button">Refresh</button>
-      </h2>
-      <p class="hint">Live from Exotel's per-call <code>call_status_callback</code>. Auto-refreshes every 15s.</p>
-      <div class="table-wrap">
-        <table id="calls">
-          <thead><tr>
-            <th>Received</th><th>To</th><th>Status</th><th>Dur (s)</th><th>Campaign</th><th>Recording</th>
-          </tr></thead>
-          <tbody></tbody>
-        </table>
+  <div class="app">
+    <!-- ── Sidebar ─────────────────────────────────────────────── -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">🎙️</span>
+        <span class="brand-name">Dynamic<br/>Greetings</span>
       </div>
-    </section>
-  </main>
+      <nav class="nav">
+        <a class="nav-link active" data-view="dashboard"><span class="ni">▚</span> Dashboard</a>
+        <a class="nav-link" data-view="new"><span class="ni">＋</span> New Campaign</a>
+        <a class="nav-link" data-view="campaigns"><span class="ni">📣</span> Campaigns</a>
+        <a class="nav-link" data-view="greetings"><span class="ni">♪</span> MP3 Library</a>
+      </nav>
+      <div class="side-foot">
+        <div class="side-stat"><span>Active greeting</span><b id="side-greeting">—</b></div>
+        <div class="side-stat"><span>Endpoint</span><b id="side-base" class="mono">—</b></div>
+      </div>
+    </aside>
 
+    <!-- ── Main ────────────────────────────────────────────────── -->
+    <div class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="view-title">Dashboard</h1>
+          <p class="sub" id="view-sub">Live overview of your voice campaigns.</p>
+        </div>
+        <div class="topbar-actions">
+          <span class="live"><span class="dot"></span> Live · auto-refresh 15s</span>
+          <button id="refresh-all" class="btn ghost" type="button">↻ Refresh</button>
+        </div>
+      </header>
+
+      <!-- Dashboard ------------------------------------------------ -->
+      <section class="view" id="view-dashboard">
+        <div class="tiles" id="tiles"></div>
+        <div class="grid-2">
+          <div class="card">
+            <h2>Call outcomes</h2>
+            <div id="donut" class="chart-donut"></div>
+          </div>
+          <div class="card">
+            <h2>Calls per campaign</h2>
+            <div id="bars" class="chart-bars"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Recent calls</h2>
+          <div class="table-wrap">
+            <table class="tbl" id="recent-calls">
+              <thead><tr><th>Received</th><th>To</th><th>Status</th><th>Dur</th><th>Campaign</th><th>Recording</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- New Campaign -------------------------------------------- -->
+      <section class="view hidden" id="view-new">
+        <div class="card">
+          <h2>Create a campaign</h2>
+          <form id="campaign-form">
+            <div class="frow">
+              <label class="field">Campaign name
+                <input type="text" id="c-name" placeholder="e.g. Diwali offer" required />
+              </label>
+              <label class="field">Caller ID / ExoPhone
+                <input type="text" id="c-caller" placeholder="blank = default ExoPhone" />
+              </label>
+            </div>
+            <label class="field">Greeting to play
+              <select id="c-greeting" required></select>
+            </label>
+            <label class="field">Phone numbers <span class="muted">(comma / space / newline separated)</span>
+              <textarea id="c-numbers" rows="5" placeholder="9876543210, 9123456780 …" required></textarea>
+            </label>
+            <div class="frow">
+              <label class="field">Send at (IST)
+                <input type="datetime-local" id="c-sendat" />
+              </label>
+              <label class="field">End at (IST, optional)
+                <input type="datetime-local" id="c-endat" />
+              </label>
+              <label class="field">Retries
+                <input type="number" id="c-retries" min="0" max="3" value="0" />
+              </label>
+            </div>
+            <p class="hint">Leave “Send at” empty to start immediately. Times are treated as IST (+05:30). Numbers are auto-normalized to E.164.</p>
+            <div class="form-actions">
+              <button type="submit" class="btn primary">Create campaign</button>
+              <span id="c-status" class="status"></span>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Campaigns ----------------------------------------------- -->
+      <section class="view hidden" id="view-campaigns">
+        <div class="card">
+          <div class="card-head">
+            <h2>Campaigns</h2>
+            <span class="muted" id="campaigns-count"></span>
+          </div>
+          <div id="campaigns" class="camp-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h2>Individual calls</h2>
+            <select id="calls-filter" class="mini-select"><option value="">All campaigns</option></select>
+          </div>
+          <p class="hint">Live from Exotel's per-call <code>call_status_callback</code>.</p>
+          <div class="table-wrap">
+            <table class="tbl" id="calls">
+              <thead><tr><th>Received</th><th>To</th><th>Status</th><th>Dur</th><th>Campaign</th><th>Recording</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- MP3 Library --------------------------------------------- -->
+      <section class="view hidden" id="view-greetings">
+        <div class="card">
+          <h2>MP3 Library</h2>
+          <form id="upload-form" class="frow">
+            <label class="field">Greeting name
+              <input type="text" id="up-name" placeholder="e.g. Diwali offer" />
+            </label>
+            <label class="field">Audio file
+              <input type="file" id="up-file" accept="audio/mpeg,audio/wav,.mp3,.wav" required />
+            </label>
+            <button type="submit" class="btn primary self-end">Upload</button>
+          </form>
+          <p class="hint">Auto-transcoded to 8 kHz mono MP3 (Exotel spec). Each upload gets a unique URL so cached audio never goes stale.</p>
+          <div id="library" class="list"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
   <script src="/app.js"></script>
 </body>
 </html>

@@ -119,3 +119,38 @@ export async function upsertCall(row) {
   await save();
   return rec;
 }
+
+// Bucket a raw Exotel call status into one of: completed | failed | pending |
+// other. "failed" = worth retrying (busy, no-answer, failed, canceled…).
+// Order matters: check failure first — "no-answer" contains "answer", so a
+// naive success check would misfile it as completed.
+const RETRY_RE = /(fail|busy|no[-_ ]?answer|cancel|declin|reject|missed|unreach)/i;
+const SUCCESS_RE = /(complete|answer|success)/i;
+const PENDING_RE = /(progress|ringing|queued|initiat|dial)/i;
+export function classifyStatus(status) {
+  const s = String(status || '').trim().toLowerCase();
+  if (!s) return 'other';
+  if (RETRY_RE.test(s)) return 'failed';
+  if (SUCCESS_RE.test(s)) return 'completed';
+  if (PENDING_RE.test(s)) return 'pending';
+  return 'other';
+}
+
+// Distinct recipient numbers whose most-recent call for this Exotel campaign
+// failed (and did not later succeed). Used by "re-run failed calls".
+export function failedNumbersForCampaign(exotelCampaignId) {
+  const cid = String(exotelCampaignId);
+  const latestByNumber = new Map(); // number_key → latest call row
+  for (const c of data.calls) {
+    if (c.exotel_campaign_id !== cid) continue;
+    const key = String(c.to_number || '').replace(/\D/g, '').slice(-10);
+    if (key.length !== 10) continue;
+    const prev = latestByNumber.get(key);
+    if (!prev || (c.received_at || '') > (prev.received_at || '')) latestByNumber.set(key, c);
+  }
+  const out = [];
+  for (const c of latestByNumber.values()) {
+    if (classifyStatus(c.status) === 'failed') out.push(c.to_number);
+  }
+  return out;
+}
