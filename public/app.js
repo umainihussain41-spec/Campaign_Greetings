@@ -17,6 +17,9 @@ const toIST = (v) => (v ? `${v}:00+05:30` : null);
 const fmt = (ts) => (ts ? new Date(ts).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-');
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
 const key10 = (n) => String(n || '').replace(/\D/g, '').slice(-10);
+// The dialed contact number. Falls back to the raw Exotel payload for calls
+// stored before field mapping caught `from` (campaign callbacks use `from`).
+const contactOf = (c) => c.to_number || c.raw?.from || c.raw?.From || c.raw?.To || c.raw?.DialWhomNumber || '';
 
 // ── Icons (inline SVG, stroke = currentColor) ─────────────────
 const ICONS = {
@@ -68,7 +71,7 @@ function latestByNumber(exotelId) {
   if (!exotelId) return m;
   for (const c of calls) {
     if (String(c.exotel_campaign_id) !== String(exotelId)) continue;
-    const k = key10(c.to_number); if (k.length !== 10) continue;
+    const k = key10(contactOf(c)); if (k.length !== 10) continue;
     const prev = m.get(k);
     if (!prev || (c.received_at || '') > (prev.received_at || '')) m.set(k, c);
   }
@@ -81,7 +84,7 @@ function statsFor(camp) {
   const failedNums = new Set();
   for (const c of latestByNumber(camp.exotel_campaign_id).values()) {
     const g = granular(c.status); counts[g]++;
-    if (RETRYABLE.has(g)) failedNums.add(key10(c.to_number));
+    if (RETRYABLE.has(g)) failedNums.add(key10(contactOf(c)));
   }
   const accounted = Object.values(counts).reduce((a, b) => a + b, 0);
   const target = Math.max(camp.numbers_count || 0, accounted);
@@ -191,7 +194,7 @@ function callRow(c, opts = {}) {
   const g = granular(c.status);
   return `<tr>
     <td>${fmt(c.received_at)}</td>
-    <td>${esc(c.to_number || '-')}</td>
+    <td>${esc(contactOf(c) || '-')}</td>
     <td><span class="pill ${g === 'noanswer' || g === 'busy' ? 'failed' : g}">${esc(c.status || '-')}</span></td>
     <td class="num">${c.duration_sec ?? '-'}${Number.isFinite(c.duration_sec) ? 's' : ''}</td>
     <td>${opts.started ? fmt(c.start_time) : esc(campaignName(c.exotel_campaign_id))}</td>

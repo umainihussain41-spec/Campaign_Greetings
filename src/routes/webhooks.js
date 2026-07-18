@@ -80,20 +80,25 @@ async function callStatusHandler(req, res, next) {
     const b = { ...req.query, ...req.body };
 
     const callSid = pick(b, 'CallSid', 'Sid', 'call_sid');
+    // Campaign call-status posts per-call info under `legs[0]` and puts the
+    // dialed contact number in `from` (with the ExoPhone in `caller_id`).
+    const leg = (Array.isArray(b.legs) && b.legs.length) ? b.legs[0] : {};
     const row = {
       call_sid: callSid ? String(callSid) : null,
       exotel_campaign_id: (() => {
         const v = pick(b, 'CampaignSid', 'CampaignId', 'campaign_id', 'campaign_sid');
         return v != null ? String(v) : null;
       })(),
-      to_number: pick(b, 'To', 'DialWhomNumber', 'to'),
-      from_number: pick(b, 'From', 'CallFrom', 'from'),
-      status: pick(b, 'Status', 'CallStatus', 'status'),
+      // The number we dialed: classic callbacks use To/DialWhomNumber;
+      // campaign callbacks carry the contact in `from`.
+      to_number: pick(b, 'To', 'DialWhomNumber', 'to', 'from', 'From', 'CallFrom'),
+      from_number: pick(b, 'CallerId', 'caller_id', 'CallFrom'),
+      status: pick(b, 'Status', 'CallStatus', 'status') ?? pick(leg, 'status'),
       direction: pick(b, 'Direction', 'direction'),
-      start_time: toTs(pick(b, 'StartTime', 'DateCreated', 'start_time')),
-      end_time: toTs(pick(b, 'EndTime', 'DateUpdated', 'end_time')),
-      duration_sec: toInt(pick(b, 'ConversationDuration', 'DialCallDuration', 'Duration', 'duration')),
-      recording_url: pick(b, 'RecordingUrl', 'recording_url'),
+      start_time: toTs(pick(b, 'StartTime', 'DateCreated', 'date_created', 'start_time')),
+      end_time: toTs(pick(b, 'EndTime', 'DateUpdated', 'date_updated', 'end_time')),
+      duration_sec: toInt(pick(b, 'ConversationDuration', 'DialCallDuration', 'Duration', 'duration') ?? pick(leg, 'on_call_duration', 'duration')),
+      recording_url: pick(b, 'RecordingUrl', 'recording_url') ?? pick(leg, 'recording_url', 'RecordingUrl'),
       raw: b,
     };
 
