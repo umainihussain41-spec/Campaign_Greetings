@@ -89,6 +89,16 @@ export async function updateCampaign(cid, patch) {
   await save();
   return c;
 }
+// Record the campaign status Exotel reports (via /exotel/campaign-status),
+// matched by the Exotel campaign id. This is the authoritative status, unlike
+// our local provisioning status.
+export async function setCampaignExotelStatus(exotelId, status) {
+  const c = data.campaigns.find((x) => String(x.exotel_campaign_id) === String(exotelId));
+  if (!c) return null;
+  c.exotel_status = status;
+  await save();
+  return c;
+}
 
 // ── Campaign → number map ─────────────────────────────────────────────
 export async function insertCampaignNumbers(rows) {

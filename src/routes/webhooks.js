@@ -111,4 +111,18 @@ function logOnly(label) {
   };
 }
 webhooksRouter.all('/call-schedule', logOnly('call-schedule'));
-webhooksRouter.all('/campaign-status', logOnly('campaign-status'));
+
+// Campaign-level status: capture Exotel's authoritative status onto the
+// matching campaign record, then log.
+async function campaignStatusHandler(req, res, next) {
+  try {
+    if (!tokenOk(req)) return res.status(403).end();
+    const b = { ...req.query, ...req.body };
+    const cid = pick(b, 'CampaignSid', 'CampaignId', 'campaign_id', 'campaign_sid', 'Sid');
+    const status = pick(b, 'Status', 'CampaignStatus', 'status', 'State');
+    if (cid && status) await store.setCampaignExotelStatus(String(cid), String(status));
+    console.log('[webhook:campaign-status]', JSON.stringify(b));
+    res.status(200).json({ ok: true });
+  } catch (e) { next(e); }
+}
+webhooksRouter.all('/campaign-status', campaignStatusHandler);
